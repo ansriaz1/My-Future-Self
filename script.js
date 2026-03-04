@@ -25,15 +25,63 @@ function animateStars() {
 }
 animateStars();
 
-// 🌌 Future logic
+// 🌌 Memory + Future logic
 let positivity = 0;
+let memory = []; // stores past user inputs
 
+// Phrase pools
+const motivational = [
+    "Keep building, your future depends on it.",
+    "Every step matters, don’t stop now.",
+    "Discipline today, freedom tomorrow.",
+    "Small actions compound into greatness.",
+    "Your choices now shape your legacy.",
+    "Focus on progress, not perfection.",
+    "Consistency is your superpower.",
+    "Remember why you started.",
+    "Embrace challenge; it molds you.",
+    "Take control, even when scared."
+];
+
+const warning = [
+    "Procrastination is stealing your potential.",
+    "Every delay is a lost opportunity.",
+    "Fear will only slow you down.",
+    "Ignoring your path leads to regret.",
+    "The comfort you chase may trap you.",
+    "Remember: future you is watching.",
+    "Small bad habits compound into big mistakes.",
+    "Avoid shortcuts; they lead nowhere.",
+    "Lazy decisions today haunt tomorrow.",
+    "Time lost cannot be regained."
+];
+
+const neutral = [
+    "Interesting… tell me more.",
+    "Hmm… I see.",
+    "That’s a choice you made.",
+    "I remember that day.",
+    "Keep that in mind.",
+    "The future is full of possibilities.",
+    "Reflect on what you just said.",
+    "Let’s think this through.",
+    "Curiosity drives your actions.",
+    "Your thoughts shape outcomes."
+];
+
+// Random utility
+function pickRandom(arr){
+    return arr[Math.floor(Math.random()*arr.length)];
+}
+
+// Main functions
 function sendMessage() {
     const input = document.getElementById("userInput");
     const text = input.value.trim();
     if(!text) return;
 
     addMessage(text,"user");
+    memory.push(text.toLowerCase());
     analyze(text);
     generateResponse(text);
     input.value="";
@@ -49,28 +97,40 @@ function addMessage(text,type){
 }
 
 function analyze(text){
-    if(text.match(/start|discipline|learn|build/i)) positivity++;
-    if(text.match(/later|lazy|quit|afraid/i)) positivity--;
+    if(text.match(/start|discipline|learn|build|work|focus/i)) positivity++;
+    if(text.match(/later|lazy|quit|afraid|delay|bored/i)) positivity--;
 }
 
-// 🌟 Simple AI responses
+// 🌟 Rule-based AI with memory
 function generateResponse(userMessage){
-    addMessage("Thinking about our future...","future");
+    addMessage("Thinking about your future...","future");
 
     setTimeout(()=>{
         chatBox.lastChild.remove(); // remove "Thinking..." message
-        let response;
-        if(userMessage.includes("?")) {
-            response = "Hmm… I see. Let me think… " + ["Yes.", "No.", "Maybe.", "Absolutely.", "I wouldn't do that."].sort(()=>0.5-Math.random())[0];
-        } else if(userMessage.match(/start|build|learn/i)) {
-            response = "Good choice. Keep going, the future depends on it.";
-        } else if(userMessage.match(/later|lazy|quit|afraid/i)) {
-            response = "I see… procrastination has its cost, remember that.";
-        } else {
-            response = ["Interesting…","I remember that day…","That was a choice.","Keep that in mind."].sort(()=>0.5-Math.random())[0];
+
+        let responsePool = neutral;
+
+        // Check for motivational keywords
+        if(userMessage.match(/start|learn|build|focus|discipline|work/i)) {
+            responsePool = motivational;
+        } else if(userMessage.match(/later|lazy|quit|afraid|delay|bored/i)) {
+            responsePool = warning;
         }
-        addMessage(response,"future");
-    }, 1000);
+
+        // Check memory for repeated themes
+        const repeats = memory.filter(m => m === userMessage.toLowerCase());
+        if(repeats.length > 1){
+            responsePool = warning; // if repeated, AI warns more strongly
+        }
+
+        // Combine two random phrases for variety
+        const phrase1 = pickRandom(responsePool);
+        const phrase2 = pickRandom(neutral);
+        let finalResponse = phrase1 + " " + phrase2;
+
+        addMessage(finalResponse,"future");
+
+    }, 1200);
 }
 
 function generateReport(){
