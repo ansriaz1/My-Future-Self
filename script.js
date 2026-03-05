@@ -1,52 +1,83 @@
-// ===============================
-// AI Request using Groq API
-// ===============================
+// -------------------- Updated script.js --------------------
 
-const GROQ_API_KEY = "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";
-const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
+const apiKey = "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"; // your API key
+const chatBox = document.getElementById("chatBox");
+const userInput = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
 
-// Function to send message to AI
-async function sendMessageToAI(userMessage) {
-  try {
-    const response = await fetch(GROQ_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${GROQ_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages: [{ role: "user", content: userMessage }],
-        max_tokens: 200
-      })
-    });
+// Greeting keywords
+const greetings = ["hi", "hello", "hey", "assalamualaikum", "salam"];
 
-    const data = await response.json();
-    return data.choices[0].message.content; // AI's reply
-  } catch (error) {
-    console.error("Error calling Groq API:", error);
-    return "Oops! Something went wrong. Try again.";
-  }
+// Check if user message is a greeting
+function isGreeting(message) {
+    message = message.toLowerCase();
+    return greetings.some(greet => message.includes(greet));
 }
 
-// Handle user input
-document.getElementById("sendBtn").addEventListener("click", async () => {
-  const userInput = document.getElementById("userInput").value.trim();
-  if (!userInput) return;
+// Send message to AI API
+async function sendMessage() {
+    const message = userInput.value.trim();
+    if (!message) return;
 
-  // Show user's message
-  document.getElementById("chatBox").innerHTML += `<p><b>You:</b> ${userInput}</p>`;
+    displayMessage("You: " + message, "user");
+    userInput.value = "";
 
-  // Clear input box
-  document.getElementById("userInput").value = "";
+    // Prepare system message to make AI remember your name
+    const systemMessage = `
+You are an AI assistant named Ans.
+Always remember your name is Ans and you are the user's personal AI assistant.
+When greeting the user or introducing yourself, vary your sentences naturally.
+Be friendly, helpful, and conversational.
+`;
 
-  // Get AI reply
-  const aiReply = await sendMessageToAI(userInput);
+    // Prepare messages for API
+    const messages = [
+        { role: "system", content: systemMessage },
+        { role: "user", content: message }
+    ];
 
-  // Show AI reply
-  document.getElementById("chatBox").innerHTML += `<p><b>AI:</b> ${aiReply}</p>`;
+    // Optional: If message is a greeting, nudge AI to greet warmly
+    if (isGreeting(message)) {
+        messages.push({ role: "user", content: "Greet the user warmly and introduce yourself naturally." });
+    }
 
-  // Scroll to bottom
-  const chatBox = document.getElementById("chatBox");
-  chatBox.scrollTop = chatBox.scrollHeight;
+    try {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: "gpt-3.5-turbo",
+                messages: messages
+            })
+        });
+
+        const data = await response.json();
+        const aiReply = data.choices[0].message.content;
+
+        displayMessage("Ans: " + aiReply, "bot");
+
+    } catch (err) {
+        displayMessage("Ans: Sorry, something went wrong 😔", "bot");
+        console.error(err);
+    }
+}
+
+// Display message in chat box
+function displayMessage(message, sender) {
+    const msg = document.createElement("div");
+    msg.className = sender === "user" ? "userMessage" : "botMessage";
+    msg.innerText = message;
+    chatBox.appendChild(msg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Send on button click
+sendBtn.addEventListener("click", sendMessage);
+
+// Send on Enter key
+userInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") sendMessage();
 });
